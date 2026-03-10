@@ -4,47 +4,62 @@ import com.example.praktam_2417051031.R
 import com.example.praktam_2417051031.ReportType
 
 object LostFoundSource {
+
     val dummyReports = listOf(
+
         LostItem(
             type = ReportType.LOST,
             itemName = "Dompet Hitam",
-            description = "Dompet warna hitam berisi KTP & KTM. Kemungkinan jatuh di sekitar GKU.",
+            description = "Dompet hitam berisi KTP dan KTM, kemungkinan jatuh di sekitar GKU.",
             location = "GKU UNILA",
             dateTime = "1 Maret 2026, 10:30",
-            contact = "WA: 08xxxxxxxxxx",
+            contact = "WA: 08xxxxxxxx",
             images = listOf(
                 R.drawable.dompet1,
                 R.drawable.dompet1,
                 R.drawable.dompet1
             )
         ),
+
         LostItem(
             type = ReportType.LOST,
             itemName = "Kartu KTM",
-            description = "KTM atas nama (isi sendiri). Terakhir terlihat di area perpustakaan.",
+            description = "KTM mahasiswa hilang di sekitar perpustakaan UNILA.",
             location = "Perpustakaan UNILA",
             dateTime = "1 Maret 2026, 13:10",
-            contact = "IG: @username_kamu",
+            contact = "IG: @username",
             images = listOf(
-                R.drawable.ktm1,
                 R.drawable.ktm1,
                 R.drawable.ktm1,
                 R.drawable.ktm1
             )
         ),
+
         LostItem(
             type = ReportType.FOUND,
             itemName = "Kunci Motor",
-            description = "Ditemukan kunci motor dengan gantungan warna merah.",
+            description = "Ditemukan kunci motor dengan gantungan merah.",
             location = "Parkiran FEB",
             dateTime = "1 Maret 2026, 14:00",
             contact = "IG: @lostfound_unila",
             images = listOf(
                 R.drawable.kunci1,
                 R.drawable.kunci1,
-                R.drawable.kunci1,
-                R.drawable.kunci1,
                 R.drawable.kunci1
+            )
+        ),
+
+        LostItem(
+            type = ReportType.FOUND,
+            itemName = "Botol Minum",
+            description = "Botol minum warna biru ditemukan di ruang kelas.",
+            location = "Gedung B FKIP",
+            dateTime = "2 Maret 2026, 09:00",
+            contact = "WA: 08xxxxxxxx",
+            images = listOf(
+                R.drawable.botol1,
+                R.drawable.botol1,
+                R.drawable.botol1
             )
         )
     )
