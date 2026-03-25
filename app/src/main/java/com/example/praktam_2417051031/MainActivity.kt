@@ -8,8 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -42,23 +43,75 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LostFoundScreen() {
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
 
-        Text(
-            text = "Halo UNILA - Lost & Found",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        // HEADER
+        item {
+            Text(
+                text = "Halo UNILA - Lost & Found",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        // 🔥 LAZY ROW (MODUL 6 KELIATAN)
+        item {
+            Text(
+                text = "Preview Barang",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-        LostFoundSource.dummyReports.forEach { item ->
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(LostFoundSource.dummyReports) { item ->
+                    MiniLostItemCard(item)
+                }
+            }
+        }
+
+        // LIST UTAMA
+        items(LostFoundSource.dummyReports) { item ->
             LostItemCard(item)
+        }
+    }
+}
+
+@Composable
+fun MiniLostItemCard(item: LostItem) {
+
+    Card(
+        modifier = Modifier.width(140.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+
+        Column {
+
+            val image = item.images.firstOrNull()
+
+            if (image != null) {
+                Image(
+                    painter = painterResource(id = image),
+                    contentDescription = item.itemName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(90.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Text(
+                text = item.itemName,
+                modifier = Modifier.padding(8.dp),
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
         }
     }
 }
@@ -72,24 +125,26 @@ fun LostItemCard(item: LostItem) {
     var listKomentar by remember { mutableStateOf(listOf<String>()) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {
 
         Column(modifier = Modifier.padding(12.dp)) {
 
+            val image = item.images.firstOrNull()
+
             Box {
 
-                Image(
-                    painter = painterResource(id = item.images.first()),
-                    contentDescription = item.itemName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
-                )
+                if (image != null) {
+                    Image(
+                        painter = painterResource(id = image),
+                        contentDescription = item.itemName,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
