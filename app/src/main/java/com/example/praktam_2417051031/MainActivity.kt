@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,21 +21,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import com.example.praktam_2417051031.ui.theme.PrakTAM_2417051031Theme
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
             PrakTAM_2417051031Theme {
-                LostFoundScreen()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    LostFoundScreen()
+                }
             }
         }
     }
@@ -42,57 +45,52 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun LostFoundScreen() {
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
 
-        // HEADER
         item {
             Text(
                 text = "Halo UNILA - Lost & Found",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
-        // 🔥 LAZY ROW (MODUL 6 KELIATAN)
         item {
             Text(
                 text = "Preview Barang",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(LostFoundSource.dummyReports) { item ->
-                    MiniLostItemCard(item)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(LostFoundSource.dummyReports) {
+                    MiniLostItemCard(it)
                 }
             }
         }
 
-        // LIST UTAMA
-        items(LostFoundSource.dummyReports) { item ->
-            LostItemCard(item)
+        items(LostFoundSource.dummyReports) {
+            LostItemCard(it)
         }
     }
 }
 
 @Composable
 fun MiniLostItemCard(item: LostItem) {
-
     Card(
         modifier = Modifier.width(140.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-
         Column {
-
             val image = item.images.firstOrNull()
 
             if (image != null) {
@@ -109,7 +107,8 @@ fun MiniLostItemCard(item: LostItem) {
             Text(
                 text = item.itemName,
                 modifier = Modifier.padding(8.dp),
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
         }
@@ -126,7 +125,10 @@ fun LostItemCard(item: LostItem) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
 
         Column(modifier = Modifier.padding(12.dp)) {
@@ -134,7 +136,6 @@ fun LostItemCard(item: LostItem) {
             val image = item.images.firstOrNull()
 
             Box {
-
                 if (image != null) {
                     Image(
                         painter = painterResource(id = image),
@@ -156,7 +157,10 @@ fun LostItemCard(item: LostItem) {
                         else
                             Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
-                        tint = if (isFavorite) Color.Red else Color.White
+                        tint = if (isFavorite)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -169,10 +173,10 @@ fun LostItemCard(item: LostItem) {
                 else
                     "✅ Barang Ditemukan",
                 color = if (item.type == ReportType.LOST)
-                    Color.Red
+                    MaterialTheme.colorScheme.primary
                 else
-                    Color(0xFF2E7D32),
-                fontWeight = FontWeight.Bold
+                    MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -180,7 +184,7 @@ fun LostItemCard(item: LostItem) {
             Text(
                 text = item.itemName,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -196,10 +200,10 @@ fun LostItemCard(item: LostItem) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(text = item.description)
-                Text(text = "Lokasi: ${item.location}")
-                Text(text = "Waktu: ${item.dateTime}")
-                Text(text = "Kontak: ${item.contact}")
+                Text(item.description, style = MaterialTheme.typography.bodyMedium)
+                Text("Lokasi: ${item.location}", style = MaterialTheme.typography.bodySmall)
+                Text("Waktu: ${item.dateTime}", style = MaterialTheme.typography.bodySmall)
+                Text("Kontak: ${item.contact}", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -223,7 +227,7 @@ fun LostItemCard(item: LostItem) {
                 }
 
                 listKomentar.forEach {
-                    Text("- $it")
+                    Text("- $it", style = MaterialTheme.typography.bodySmall)
                 }
             }
 
