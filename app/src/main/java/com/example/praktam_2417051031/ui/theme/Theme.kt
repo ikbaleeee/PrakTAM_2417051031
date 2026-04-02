@@ -4,11 +4,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
 private val AppColorScheme = lightColorScheme(
-    primary = OrangePrimary,
-    secondary = OrangeSecondary,
-    background = CreamBackground,
-    surface = CardSurface,
-    onPrimary = OnPrimaryText
+    primary = IGPrimary,
+    secondary = IGSecondary,
+    background = IGBackground,
+    surface = IGSurface,
+    onPrimary = IGOnPrimary
 )
 
 @Composable
