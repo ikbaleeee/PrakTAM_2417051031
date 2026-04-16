@@ -5,130 +5,133 @@ import Model.LostItem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.*
 import com.example.praktam_2417051031.ui.theme.PrakTAM_2417051031Theme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         setContent {
             PrakTAM_2417051031Theme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    LostFoundScreen()
-                }
+                val navController = rememberNavController()
+                AppNavigation(navController)
             }
         }
     }
 }
 
 @Composable
-fun LostFoundScreen() {
+fun AppNavigation(navController: NavHostController) {
+
+    NavHost(navController = navController, startDestination = "home") {
+
+        composable("home") {
+            LostFoundScreen(navController)
+        }
+
+        composable("detail/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+
+            val item = LostFoundSource.dummyReports.find { it.id == id }
+
+            if (item != null) {
+                DetailScreen(item, navController)
+            }
+        }
+    }
+}
+
+@Composable
+fun LostFoundScreen(navController: NavHostController) {
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
         item {
-            Text(
-                text = "Halo UNILA - Lost & Found",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Text("Halo UNILA - Lost & Found", style = MaterialTheme.typography.headlineMedium)
         }
 
         item {
-            Text(
-                text = "Preview Barang",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Text("Preview Barang")
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(LostFoundSource.dummyReports) {
-                    MiniLostItemCard(it)
+                    MiniCard(it, navController)
                 }
             }
         }
 
         items(LostFoundSource.dummyReports) {
-            LostItemCard(it)
+            LostItemCard(it, navController)
         }
     }
 }
 
 @Composable
-fun MiniLostItemCard(item: LostItem) {
+fun MiniCard(item: LostItem, navController: NavHostController) {
+
     Card(
-        modifier = Modifier.width(140.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        modifier = Modifier
+            .width(140.dp)
+            .clickable { navController.navigate("detail/${item.id}") }
     ) {
         Column {
             val image = item.images.firstOrNull()
 
             if (image != null) {
                 Image(
-                    painter = painterResource(id = image),
-                    contentDescription = item.itemName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(90.dp),
+                    painter = painterResource(image),
+                    contentDescription = null,
+                    modifier = Modifier.height(90.dp),
                     contentScale = ContentScale.Crop
                 )
             }
 
-            Text(
-                text = item.itemName,
-                modifier = Modifier.padding(8.dp),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
+            Text(item.itemName, modifier = Modifier.padding(8.dp))
         }
     }
 }
 
 @Composable
-fun LostItemCard(item: LostItem) {
+fun LostItemCard(item: LostItem, navController: NavHostController) {
 
     var isFavorite by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     var komentar by remember { mutableStateOf("") }
     var listKomentar by remember { mutableStateOf(listOf<String>()) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        shape = RoundedCornerShape(16.dp)
     ) {
 
         Column(modifier = Modifier.padding(12.dp)) {
@@ -138,8 +141,8 @@ fun LostItemCard(item: LostItem) {
             Box {
                 if (image != null) {
                     Image(
-                        painter = painterResource(id = image),
-                        contentDescription = item.itemName,
+                        painter = painterResource(image),
+                        contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp),
@@ -152,65 +155,35 @@ fun LostItemCard(item: LostItem) {
                     modifier = Modifier.align(Alignment.TopEnd)
                 ) {
                     Icon(
-                        imageVector = if (isFavorite)
-                            Icons.Filled.Favorite
-                        else
-                            Icons.Outlined.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (isFavorite)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onPrimary
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = null
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = if (item.type == ReportType.LOST)
-                    "❌ Barang Hilang"
-                else
-                    "✅ Barang Ditemukan",
-                color = if (item.type == ReportType.LOST)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Text(item.itemName, style = MaterialTheme.typography.titleLarge)
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = item.itemName,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
+            Button(
+                onClick = { navController.navigate("detail/${item.id}") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Lihat Detail")
+            }
 
             Button(
                 onClick = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (expanded) "Sembunyikan Detail" else "Lihat Detail")
+                Text("Komentar")
             }
 
             if (expanded) {
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(item.description, style = MaterialTheme.typography.bodyMedium)
-                Text("Lokasi: ${item.location}", style = MaterialTheme.typography.bodySmall)
-                Text("Waktu: ${item.dateTime}", style = MaterialTheme.typography.bodySmall)
-                Text("Kontak: ${item.contact}", style = MaterialTheme.typography.bodySmall)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
                 TextField(
                     value = komentar,
                     onValueChange = { komentar = it },
-                    label = { Text("Tulis komentar...") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -219,26 +192,98 @@ fun LostItemCard(item: LostItem) {
                         if (komentar.isNotEmpty()) {
                             listKomentar = listKomentar + komentar
                             komentar = ""
+
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Komentar berhasil ditambahkan!")
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    }
                 ) {
-                    Text("Kirim Komentar")
+                    Text("Kirim")
                 }
 
                 listKomentar.forEach {
-                    Text("- $it", style = MaterialTheme.typography.bodySmall)
+                    Text("- $it")
                 }
+            }
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun DetailScreen(item: LostItem, navController: NavHostController) {
+
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            val image = item.images.firstOrNull()
+
+            if (image != null) {
+                Image(
+                    painter = painterResource(image),
+                    contentDescription = item.itemName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
+                    contentScale = ContentScale.Crop
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            Text(item.itemName, style = MaterialTheme.typography.titleLarge)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(item.description)
+            Text("Lokasi: ${item.location}")
+            Text("Waktu: ${item.dateTime}")
+            Text("Kontak: ${item.contact}")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
-                onClick = { },
+                onClick = {
+                    scope.launch {
+                        isLoading = true
+                        delay(2000)
+                        snackbarHostState.showSnackbar("Berhasil menghubungi pemilik!")
+                        isLoading = false
+                    }
+                },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Hubungi Pemilik")
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Hubungi Pemilik")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Kembali")
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }

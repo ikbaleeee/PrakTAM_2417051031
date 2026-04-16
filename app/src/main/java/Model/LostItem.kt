@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import com.example.praktam_2417051031.ReportType
 
 data class LostItem(
+    val id: String,
     val type: ReportType,
     val itemName: String,
     val description: String,
