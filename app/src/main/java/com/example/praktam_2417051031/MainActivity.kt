@@ -1,12 +1,10 @@
 package com.example.praktam_2417051031
 
-import Model.LostFoundSource
+import coil.compose.AsyncImage
 import Model.LostItem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -16,8 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -28,6 +24,8 @@ import androidx.navigation.compose.*
 import com.example.praktam_2417051031.ui.theme.PrakTAM_2417051031Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import com.example.praktam_2417051031.network.RetrofitClient
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,16 +43,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(navController: NavHostController) {
 
+    var items by remember { mutableStateOf<List<LostItem>>(emptyList()) }
+
     NavHost(navController = navController, startDestination = "home") {
 
         composable("home") {
-            LostFoundScreen(navController)
+            LostFoundScreen(navController) { fetched ->
+                items = fetched
+            }
         }
 
         composable("detail/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")
-
-            val item = LostFoundSource.dummyReports.find { it.id == id }
+            val item = items.find { it.id == id }
 
             if (item != null) {
                 DetailScreen(item, navController)
@@ -64,12 +65,52 @@ fun AppNavigation(navController: NavHostController) {
 }
 
 @Composable
-fun LostFoundScreen(navController: NavHostController) {
+fun LostFoundScreen(
+    navController: NavHostController,
+    onDataLoaded: (List<LostItem>) -> Unit = {}
+) {
+
+    var items by remember { mutableStateOf<List<LostItem>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isError by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        try {
+            items = RetrofitClient.instance.getItems()
+            onDataLoaded(items)
+            isLoading = false
+            isError = false
+        } catch (e: Exception) {
+            isLoading = false
+            isError = true
+        }
+    }
+
+    if (isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (isError || items.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Gagal Memuat Data", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Pastikan koneksi internet Anda menyala")
+            }
+        }
+        return
+    }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
@@ -81,13 +122,13 @@ fun LostFoundScreen(navController: NavHostController) {
             Text("Preview Barang")
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(LostFoundSource.dummyReports) {
+                items(items) {
                     MiniCard(it, navController)
                 }
             }
         }
 
-        items(LostFoundSource.dummyReports) {
+        items(items) {
             LostItemCard(it, navController)
         }
     }
@@ -102,16 +143,14 @@ fun MiniCard(item: LostItem, navController: NavHostController) {
             .clickable { navController.navigate("detail/${item.id}") }
     ) {
         Column {
-            val image = item.images.firstOrNull()
-
-            if (image != null) {
-                Image(
-                    painter = painterResource(image),
-                    contentDescription = null,
-                    modifier = Modifier.height(90.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            AsyncImage(
+                model = item.imageUrl,
+                contentDescription = item.itemName,
+                placeholder = painterResource(R.drawable.gambaerr),
+                error = painterResource(R.drawable.gambaerr),
+                modifier = Modifier.height(90.dp).fillMaxWidth(),
+                contentScale = ContentScale.Crop
+            )
 
             Text(item.itemName, modifier = Modifier.padding(8.dp))
         }
@@ -136,19 +175,15 @@ fun LostItemCard(item: LostItem, navController: NavHostController) {
 
         Column(modifier = Modifier.padding(12.dp)) {
 
-            val image = item.images.firstOrNull()
-
             Box {
-                if (image != null) {
-                    Image(
-                        painter = painterResource(image),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.itemName,
+                    placeholder = painterResource(R.drawable.gambaerr),
+                    error = painterResource(R.drawable.gambaerr),
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentScale = ContentScale.Crop
+                )
 
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
@@ -192,7 +227,6 @@ fun LostItemCard(item: LostItem, navController: NavHostController) {
                         if (komentar.isNotEmpty()) {
                             listKomentar = listKomentar + komentar
                             komentar = ""
-
                             scope.launch {
                                 snackbarHostState.showSnackbar("Komentar berhasil ditambahkan!")
                             }
@@ -207,10 +241,7 @@ fun LostItemCard(item: LostItem, navController: NavHostController) {
                 }
             }
 
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.padding(8.dp)
-            )
+            SnackbarHost(snackbarHostState)
         }
     }
 }
@@ -226,25 +257,18 @@ fun DetailScreen(item: LostItem, navController: NavHostController) {
 
         Column(modifier = Modifier.padding(16.dp)) {
 
-            val image = item.images.firstOrNull()
-
-            if (image != null) {
-                Image(
-                    painter = painterResource(image),
-                    contentDescription = item.itemName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            AsyncImage(
+                model = item.imageUrl,
+                contentDescription = item.itemName,
+                placeholder = painterResource(R.drawable.gambaerr),
+                error = painterResource(R.drawable.gambaerr),
+                modifier = Modifier.fillMaxWidth().height(220.dp),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(item.itemName, style = MaterialTheme.typography.titleLarge)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(item.description)
             Text("Lokasi: ${item.location}")
             Text("Waktu: ${item.dateTime}")
@@ -264,14 +288,9 @@ fun DetailScreen(item: LostItem, navController: NavHostController) {
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                } else {
-                    Text("Hubungi Pemilik")
-                }
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                else Text("Hubungi Pemilik")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = { navController.popBackStack() },
@@ -281,9 +300,6 @@ fun DetailScreen(item: LostItem, navController: NavHostController) {
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

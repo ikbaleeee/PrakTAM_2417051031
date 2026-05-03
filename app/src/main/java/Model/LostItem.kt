@@ -1,15 +1,27 @@
 package Model
 
-import androidx.annotation.DrawableRes
-import com.example.praktam_2417051031.ReportType
+import com.google.gson.annotations.SerializedName
 
 data class LostItem(
+
+    @SerializedName("id")
     val id: String,
-    val type: ReportType,
+
+    @SerializedName("itemName")
     val itemName: String,
+
+    @SerializedName("description")
     val description: String,
+
+    @SerializedName("location")
     val location: String,
+
+    @SerializedName("dateTime")
     val dateTime: String,
+
+    @SerializedName("contact")
     val contact: String,
-    @DrawableRes val images: List<Int>
+
+    @SerializedName("image_url")
+    val imageUrl: String
 )
