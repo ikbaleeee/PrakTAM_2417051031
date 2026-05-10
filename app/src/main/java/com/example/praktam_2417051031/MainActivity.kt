@@ -1,7 +1,7 @@
 package com.example.praktam_2417051031
 
 import coil.compose.AsyncImage
-import Model.LostItem
+import com.example.praktam_2417051031.data.model.LostItem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,7 +25,8 @@ import com.example.praktam_2417051031.ui.theme.PrakTAM_2417051031Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
-import com.example.praktam_2417051031.network.RetrofitClient
+import com.example.praktam_2417051031.data.api.RetrofitClient
+import com.example.praktam_2417051031.data.repository.LostRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,10 +74,11 @@ fun LostFoundScreen(
     var items by remember { mutableStateOf<List<LostItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
+    var repository = LostRepository()
 
     LaunchedEffect(Unit) {
         try {
-            items = RetrofitClient.instance.getItems()
+            items = repository.getLostItems()
             onDataLoaded(items)
             isLoading = false
             isError = false
@@ -252,6 +254,7 @@ fun DetailScreen(item: LostItem, navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val repository = remember { LostRepository() }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
