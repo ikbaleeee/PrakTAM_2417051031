@@ -1,5 +1,6 @@
 package com.example.praktam_2417051031.data.model
 
+import com.example.praktam_2417051031.ReportType
 import com.google.gson.annotations.SerializedName
 
 data class LostItem(
@@ -23,5 +24,11 @@ data class LostItem(
     val contact: String,
 
     @SerializedName("image_url")
-    val imageUrl: String
+    val imageUrl: String,
+
+    @SerializedName("type")
+    val type: ReportType? = ReportType.LOST,
+
+    @SerializedName("is_resolved")
+    val isResolved: Boolean = false
 )
