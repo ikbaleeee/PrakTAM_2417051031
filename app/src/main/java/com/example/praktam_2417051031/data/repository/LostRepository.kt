@@ -144,4 +144,29 @@ class LostRepository(private val context: Context) {
         val resolvedSet = prefs.getStringSet("ids", emptySet()) ?: emptySet()
         return resolvedSet.contains(itemId)
     }
+
+    // Profile Management
+    fun saveProfileInfo(username: String, displayName: String, bio: String, avatarUrl: String) {
+        val prefs = context.getSharedPreferences("user_profiles", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("display_name_$username", displayName)
+            .putString("bio_$username", bio)
+            .putString("avatar_url_$username", avatarUrl)
+            .apply()
+    }
+
+    fun getProfileDisplayName(username: String): String {
+        val prefs = context.getSharedPreferences("user_profiles", Context.MODE_PRIVATE)
+        return prefs.getString("display_name_$username", username) ?: username
+    }
+
+    fun getProfileBio(username: String): String {
+        val prefs = context.getSharedPreferences("user_profiles", Context.MODE_PRIVATE)
+        return prefs.getString("bio_$username", "Civitas Akademika Universitas Lampung") ?: "Civitas Akademika Universitas Lampung"
+    }
+
+    fun getProfileAvatarUrl(username: String): String? {
+        val prefs = context.getSharedPreferences("user_profiles", Context.MODE_PRIVATE)
+        return prefs.getString("avatar_url_$username", null)
+    }
 }

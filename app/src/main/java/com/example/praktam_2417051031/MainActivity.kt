@@ -111,16 +111,6 @@ fun MainContainer(navController: NavHostController, repository: LostRepository) 
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Lost & Found UNILA", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)) },
-                actions = {
-                    IconButton(onClick = {
-                        repository.clearSession()
-                        navController.navigate("login") {
-                            popUpTo("main") { inclusive = true }
-                        }
-                    }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Log Out")
-                    }
-                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
@@ -153,6 +143,12 @@ fun MainContainer(navController: NavHostController, repository: LostRepository) 
                     icon = { Icon(Icons.Default.Send, contentDescription = "Chat") },
                     label = { Text("Chat") }
                 )
+                NavigationBarItem(
+                    selected = selectedTab == "profil",
+                    onClick = { selectedTab = "profil" },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profil") },
+                    label = { Text("Profil") }
+                )
             }
         }
     ) { paddingValues ->
@@ -164,6 +160,12 @@ fun MainContainer(navController: NavHostController, repository: LostRepository) 
                 }
                 "favorit" -> FavoritesScreen(navController, repository)
                 "chat" -> ChatListScreen(navController, repository)
+                "profil" -> ProfileScreen(navController, repository) {
+                    repository.clearSession()
+                    navController.navigate("login") {
+                        popUpTo("main") { inclusive = true }
+                    }
+                }
             }
         }
     }
@@ -297,7 +299,13 @@ fun DetailScreen(
 
                 DetailRowItem(icon = Icons.Default.LocationOn, label = "Lokasi", value = item.location)
                 DetailRowItem(icon = Icons.Default.DateRange, label = "Waktu", value = item.dateTime)
-                DetailRowItem(icon = Icons.Default.Phone, label = "Kontak", value = item.contact)
+                val contactDisplay = if (item.contact.startsWith("User:")) {
+                    val rawUser = item.contact.removePrefix("User:").trim()
+                    "User: " + repository.getProfileDisplayName(rawUser)
+                } else {
+                    item.contact
+                }
+                DetailRowItem(icon = Icons.Default.Phone, label = "Kontak", value = contactDisplay)
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -415,7 +423,7 @@ fun DetailScreen(
                     )
                 } else {
                     comments.forEach { comment ->
-                        DetailCommentBubble(comment)
+                        DetailCommentBubble(comment, repository)
                     }
                 }
 
@@ -508,17 +516,19 @@ fun DetailRowItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: 
 }
 
 @Composable
-fun DetailCommentBubble(comment: Comment) {
+fun DetailCommentBubble(comment: Comment, repository: LostRepository) {
+    val displayName = repository.getProfileDisplayName(comment.author)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.Top
     ) {
-        val initials = comment.author.take(2).uppercase()
+        val initials = displayName.take(2).uppercase()
         val colors = listOf(Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7), Color(0xFF3F51B5), Color(0xFF009688))
         val avatarColor = remember(comment.author) { colors[comment.author.length % colors.size] }
 
+        val avatarUrl = repository.getProfileAvatarUrl(comment.author)
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -526,7 +536,16 @@ fun DetailCommentBubble(comment: Comment) {
                 .background(avatarColor),
             contentAlignment = Alignment.Center
         ) {
-            Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            if (!avatarUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = "Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -541,7 +560,7 @@ fun DetailCommentBubble(comment: Comment) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(comment.author, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(displayName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Text(comment.timestamp, color = Color.Gray, fontSize = 10.sp)
                 }
                 Spacer(modifier = Modifier.height(2.dp))

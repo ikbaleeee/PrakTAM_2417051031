@@ -22,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.praktam_2417051031.data.model.ChatMessage
 import com.example.praktam_2417051031.data.model.ChatRoom
 import com.example.praktam_2417051031.data.repository.LostRepository
@@ -70,7 +72,7 @@ fun ChatListScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(chatRooms) { room ->
-                    ChatRoomItem(room) {
+                    ChatRoomItem(room, repository) {
                         navController.navigate("chat/${room.contactName}")
                     }
                 }
@@ -80,8 +82,9 @@ fun ChatListScreen(
 }
 
 @Composable
-fun ChatRoomItem(room: ChatRoom, onClick: () -> Unit) {
-    val initials = room.contactName.take(2).uppercase()
+fun ChatRoomItem(room: ChatRoom, repository: LostRepository, onClick: () -> Unit) {
+    val displayName = repository.getProfileDisplayName(room.contactName)
+    val initials = displayName.take(2).uppercase()
     val colors = listOf(Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7), Color(0xFF3F51B5), Color(0xFF009688))
     val avatarColor = remember(room.contactName) { colors[room.contactName.length % colors.size] }
 
@@ -99,6 +102,7 @@ fun ChatRoomItem(room: ChatRoom, onClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val avatarUrl = repository.getProfileAvatarUrl(room.contactName)
             Box(
                 modifier = Modifier
                     .size(50.dp)
@@ -106,12 +110,21 @@ fun ChatRoomItem(room: ChatRoom, onClick: () -> Unit) {
                     .background(avatarColor),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = initials,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                if (!avatarUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = initials,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -125,7 +138,7 @@ fun ChatRoomItem(room: ChatRoom, onClick: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = room.contactName,
+                        text = displayName,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -209,7 +222,9 @@ fun ChatDetailScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val initials = contactName.take(2).uppercase()
+                        val contactDisplayName = repository.getProfileDisplayName(contactName)
+                        val initials = contactDisplayName.take(2).uppercase()
+                        val avatarUrl = repository.getProfileAvatarUrl(contactName)
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
@@ -217,10 +232,19 @@ fun ChatDetailScreen(
                                 .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            if (!avatarUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = avatarUrl,
+                                    contentDescription = "Avatar",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(contactName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(contactDisplayName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                 },
                 navigationIcon = {
